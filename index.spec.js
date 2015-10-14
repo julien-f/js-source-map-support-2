@@ -111,7 +111,7 @@ function compareStackTrace (sourceMap, source, expected) {
 
 /* eslint-disable no-regex-spaces */
 
-test('normal throw', t => {
+test('normal throw', function (t) {
   compareStackTrace(createMultiLineSourceMap(), [
     'throw new Error("test");'
   ], [
@@ -122,7 +122,7 @@ test('normal throw', t => {
   t.end()
 })
 
-test('throw inside function', t => {
+test('throw inside function', function (t) {
   compareStackTrace(createMultiLineSourceMap(), [
     'function foo() {',
     '  throw new Error("test");',
@@ -137,7 +137,7 @@ test('throw inside function', t => {
   t.end()
 })
 
-test('throw inside function inside function', t => {
+test('throw inside function inside function', function (t) {
   compareStackTrace(createMultiLineSourceMap(), [
     'function foo() {',
     '  function bar() {',
@@ -156,7 +156,7 @@ test('throw inside function inside function', t => {
   t.end()
 })
 
-test('eval', t => {
+test('eval', function (t) {
   compareStackTrace(createMultiLineSourceMap(), [
     'eval("throw new Error(\'test\')");'
   ], [
@@ -168,7 +168,7 @@ test('eval', t => {
   t.end()
 })
 
-test('eval inside eval', t => {
+test('eval inside eval', function (t) {
   compareStackTrace(createMultiLineSourceMap(), [
     'eval("eval(\'throw new Error(\\"test\\")\')");'
   ], [
@@ -181,7 +181,7 @@ test('eval inside eval', t => {
   t.end()
 })
 
-test('eval inside function', t => {
+test('eval inside function', function (t) {
   compareStackTrace(createMultiLineSourceMap(), [
     'function foo() {',
     '  eval("throw new Error(\'test\')");',
@@ -197,7 +197,7 @@ test('eval inside function', t => {
   t.end()
 })
 
-test('eval with sourceURL', t => {
+test('eval with sourceURL', function (t) {
   compareStackTrace(createMultiLineSourceMap(), [
     'eval("throw new Error(\'test\')//@ sourceURL=sourceURL.js");'
   ], [
@@ -209,7 +209,7 @@ test('eval with sourceURL', t => {
   t.end()
 })
 
-test('eval with sourceURL inside eval', t => {
+test('eval with sourceURL inside eval', function (t) {
   compareStackTrace(createMultiLineSourceMap(), [
     'eval("eval(\'throw new Error(\\"test\\")//@ sourceURL=sourceURL.js\')");'
   ], [
@@ -222,7 +222,7 @@ test('eval with sourceURL inside eval', t => {
   t.end()
 })
 
-test('function varructor', t => {
+test('function varructor', function (t) {
   compareStackTrace(createMultiLineSourceMap(), [
     'throw new Function(")");'
   ], [
@@ -234,7 +234,7 @@ test('function varructor', t => {
   t.end()
 })
 
-test('throw with empty source map', t => {
+test('throw with empty source map', function (t) {
   compareStackTrace(createEmptySourceMap(), [
     'throw new Error("test");'
   ], [
@@ -245,7 +245,7 @@ test('throw with empty source map', t => {
   t.end()
 })
 
-test('throw with source map with gap', t => {
+test('throw with source map with gap', function (t) {
   compareStackTrace(createSourceMapWithGap(), [
     'throw new Error("test");'
   ], [
@@ -256,7 +256,7 @@ test('throw with source map with gap', t => {
   t.end()
 })
 
-test('sourcesContent with data URL', t => {
+test('sourcesContent with data URL', function (t) {
   compareStackTrace(createMultiLineSourceMapWithSourcesContent(), [
     'throw new Error("test");'
   ], [
@@ -267,7 +267,7 @@ test('sourcesContent with data URL', t => {
   t.end()
 })
 
-test('finds the last sourceMappingURL', t => {
+test('finds the last sourceMappingURL', function (t) {
   compareStackTrace(createMultiLineSourceMapWithSourcesContent(), [
     '//# sourceMappingURL=missing.map.js', // NB: compareStackTrace adds another source mapping.
     'throw new Error("test");'
@@ -283,7 +283,7 @@ test('finds the last sourceMappingURL', t => {
  * `compareStackTrace` but appends a charset to the
  * source mapping url.
  */
-test('finds source maps with charset specified', t => {
+test('finds source maps with charset specified', function (t) {
   var sourceMap = createMultiLineSourceMap()
   var source = [ 'throw new Error("test");' ]
   var expected = [
@@ -309,7 +309,7 @@ test('finds source maps with charset specified', t => {
  * `compareStackTrace` but appends some code and a
  * comment to the source mapping url.
  */
-test('allows code/comments after sourceMappingURL', t => {
+test('allows code/comments after sourceMappingURL', function (t) {
   var sourceMap = createMultiLineSourceMap()
   var source = [ 'throw new Error("test");' ]
   var expected = [
