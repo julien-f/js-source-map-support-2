@@ -18,6 +18,7 @@
   "preferGlobal": false,
   "bin": {},
   "files": [
+    "error-stack.js",
     "index.js",
     "register.js"
   ],
