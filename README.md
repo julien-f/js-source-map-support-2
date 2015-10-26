@@ -2,18 +2,43 @@
 
 > Source maps for Node (using stack-chain)
 
+Differences with [source-map-support](https://www.npmjs.com/package/source-map-support):
+
+- support only Node (no browsers)
+- simpler:
+    - do not handle uncaught exceptions
+    - cannot specify a custom resolution
+- based on [stack-chain](https://www.npmjs.com/package/stack-chain)
+
 ## Install
 
-Installation of the [npm package](https://npmjs.org/package/source-map-support-2):
+Installation of the [npm package](https://npmjs.org/package/julien-f-source-map-support):
 
 ```
-> npm install --save source-map-support-2
+> npm install --save julien-f-source-map-support
 ```
 
 ## Usage
 
 ```js
-import 'source-map-support-2/register'
+import 'julien-f-source-map-support/register'
+```
+
+The perfect setup:
+
+```js
+Error.stackTraceLimit = 100
+
+// Async traces.
+//
+// Does not work with Node < 4.
+try { require('trace') } catch (_) {}
+
+// Hide core modules from traces.
+require('clarify')
+
+// Support source maps.
+require('julien-f-source-map-support')
 ```
 
 ## Development
