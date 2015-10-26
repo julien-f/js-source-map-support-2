@@ -1,4 +1,4 @@
-# source-map-support-2 [![Build Status](https://travis-ci.org/julien-f/js-source-map-support-2.png?branch=master)](https://travis-ci.org/julien-f/js-source-map-support-2)
+# julien-f-source-map-support [![Build Status](https://travis-ci.org/julien-f/js-source-map-support-2.png?branch=master)](https://travis-ci.org/julien-f/js-source-map-support-2)
 
 > Source maps for Node (using stack-chain)
 
@@ -9,6 +9,10 @@ Differences with [source-map-support](https://www.npmjs.com/package/source-map-s
     - do not handle uncaught exceptions
     - cannot specify a custom resolution
 - based on [stack-chain](https://www.npmjs.com/package/stack-chain)
+
+> Note: the name of this package is temporary, maybe it will be
+> renamed to something better or it will be integrated with
+> [source-map-support](https://www.npmjs.com/package/source-map-support).
 
 ## Install
 
