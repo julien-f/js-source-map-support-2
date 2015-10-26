@@ -1,6 +1,5 @@
 {
-  "private": true,
-  "name": "source-map-support-2",
+  "name": "julien-f-source-map-support",
   "version": "0.0.0",
   "license": "ISC",
   "description": "Source maps for Node (using stack-chain)",
