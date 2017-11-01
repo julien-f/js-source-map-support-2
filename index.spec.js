@@ -97,7 +97,7 @@ function compareStackTrace (sourceMap, source, expected) {
   // Check again with an inline source map (in a data URL)
   fs.writeFileSync('.generated.js', 'exports.test = function() {' +
     source.join('\n') + '};//@ sourceMappingURL=data:application/json;base64,' +
-    new Buffer(sourceMap.toString()).toString('base64'))
+    Buffer.from(sourceMap.toString()).toString('base64'))
   try {
     delete require.cache[require.resolve('./.generated')]
     require('./.generated').test()
@@ -161,7 +161,7 @@ test('eval', function (t) {
     'eval("throw new Error(\'test\')");'
   ], [
     'Error: test',
-    /^    at (?:Object\.)?eval \(eval at <anonymous> \(.*\/line1\.js:1001:101\)/,
+    /^    at (?:Object\.)?eval \(eval at (?:<anonymous>|exports\.test) \(.*\/line1\.js:1001:101\)/,
     /^    at Object\.exports\.test \(.*\/line1\.js:1001:101\)$/
   ])
 
@@ -173,8 +173,8 @@ test('eval inside eval', function (t) {
     'eval("eval(\'throw new Error(\\"test\\")\')");'
   ], [
     'Error: test',
-    /^    at (?:Object\.)?eval \(eval at <anonymous> \(eval at <anonymous> \(.*\/line1\.js:1001:101\)/,
-    /^    at (?:Object\.)?eval \(eval at <anonymous> \(.*\/line1\.js:1001:101\)/,
+    /^    at (?:Object\.)?eval \(eval at <anonymous> \(eval at (?:<anonymous>|exports\.test) \(.*\/line1\.js:1001:101\)/,
+    /^    at (?:Object\.)?eval \(eval at (?:<anonymous>|exports\.test) \(.*\/line1\.js:1001:101\)/,
     /^    at Object\.exports\.test \(.*\/line1\.js:1001:101\)$/
   ])
 
@@ -215,7 +215,7 @@ test('eval with sourceURL inside eval', function (t) {
   ], [
     'Error: test',
     /^    at (?:Object\.)?eval \(sourceURL.js:1:7\)$/,
-    /^    at (?:Object\.)?eval \(eval at <anonymous> \(.*\/line1\.js:1001:101\)/,
+    /^    at (?:Object\.)?eval \(eval at (?:<anonymous>|exports\.test) \(.*\/line1\.js:1001:101\)/,
     /^    at Object\.exports\.test \(.*\/line1\.js:1001:101\)$/
   ])
 
@@ -227,7 +227,7 @@ test('function varructor', function (t) {
     'throw new Function(")");'
   ], [
     'SyntaxError: Unexpected token )',
-    /^    at (?:Object\.)?Function \((?:unknown source|<anonymous>|native)\)$/,
+    /^    at (?:Object\.|new )?Function \((?:unknown source|<anonymous>|native)\)$/,
     /^    at Object\.exports\.test \(.*\/line1\.js:1001:101\)$/
   ])
 
@@ -293,7 +293,7 @@ test('finds source maps with charset specified', function (t) {
 
   fs.writeFileSync('.generated.js', 'exports.test = function() {' +
     source.join('\n') + '};//@ sourceMappingURL=data:application/json;charset=utf8;base64,' +
-    new Buffer(sourceMap.toString()).toString('base64'))
+    Buffer.from(sourceMap.toString()).toString('base64'))
   try {
     delete require.cache[require.resolve('./.generated')]
     require('./.generated').test()
@@ -319,7 +319,7 @@ test('allows code/comments after sourceMappingURL', function (t) {
 
   fs.writeFileSync('.generated.js', 'exports.test = function() {' +
     source.join('\n') + '};//# sourceMappingURL=data:application/json;base64,' +
-    new Buffer(sourceMap.toString()).toString('base64') +
+    Buffer.from(sourceMap.toString()).toString('base64') +
     '\n// Some comment below the sourceMappingURL\nvar foo = 0;')
   try {
     delete require.cache[require.resolve('./.generated')]

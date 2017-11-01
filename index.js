@@ -22,7 +22,7 @@ function clearObject (object) {
 }
 
 function decodeBase64 (base64) {
-  return new Buffer(base64, 'base64').toString()
+  return Buffer.from(base64, 'base64').toString()
 }
 
 function memoize (fn) {

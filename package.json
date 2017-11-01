@@ -21,17 +21,19 @@
     "index.js",
     "register.js"
   ],
+  "engines": {
+    "node": ">=6"
+  },
   "dependencies": {
-    "source-map": "^0.5.1",
-    "stack-chain": "^1.3.3"
+    "source-map": "^0.6.1",
+    "stack-chain": "^2.0.0"
   },
   "devDependencies": {
-    "standard": "^8.5.0",
+    "standard": "^10.0.3",
     "tape": "^4.2.1"
   },
   "scripts": {
-    "lint": "standard",
-    "test": "tape \"*.spec.js\"",
-    "posttest": "npm run lint"
+    "pretest": "standard --fix",
+    "test": "tape \"*.spec.js\""
   }
 }

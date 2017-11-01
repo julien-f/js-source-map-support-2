@@ -47,24 +47,12 @@ require('julien-f-source-map-support')
 
 ## Development
 
-### Installing dependencies
-
 ```
-> npm install
-```
+# Install dependencies
+> yarn
 
-### Compilation
-
-The sources files are watched and automatically recompiled on changes.
-
-```
-> npm run dev
-```
-
-### Tests
-
-```
-> npm run test-dev
+# Run the tests
+> yarn test
 ```
 
 ## Contributions
