@@ -51,10 +51,10 @@ require("julien-f-source-map-support");
 
 ```
 # Install dependencies
-> yarn
+> npm
 
 # Run the tests
-> yarn test
+> npm test
 ```
 
 ## Contributions
