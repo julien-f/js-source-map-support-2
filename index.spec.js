@@ -256,7 +256,7 @@ test("function varructor", function(t) {
     createMultiLineSourceMap(),
     ['throw new Function(")");'],
     [
-      "SyntaxError: Unexpected token )",
+      /^SyntaxError: Unexpected token (?:'\)'|\))/,
       /^    at (?:Object\.|new )?Function \((?:unknown source|<anonymous>|native)\)$/,
       /^    at Object\.exports\.test \(.*\/line1\.js:1001:101\)$/,
     ]
