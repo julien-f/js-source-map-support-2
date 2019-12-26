@@ -1,14 +1,15 @@
 // Test suite taken from https://github.com/evanw/node-source-map-support
 
 require("./register");
-var clearCache = require("./").clearCache;
+const clearCache = require("./").clearCache;
 
 // ===================================================================
 
-var assert = require("assert");
-var fs = require("fs");
-var SourceMapGenerator = require("source-map").SourceMapGenerator;
-var test = require("tape");
+const assert = require("assert");
+const fs = require("fs");
+const path = require("path");
+const SourceMapGenerator = require("source-map").SourceMapGenerator;
+let test = require("tape");
 
 // ===================================================================
 
@@ -33,7 +34,7 @@ function compareLines(actual, expected) {
       expected.length +
       " lines"
   );
-  for (var i = 0; i < expected.length; i++) {
+  for (let i = 0; i < expected.length; i++) {
     // Some tests are regular expressions because the output format changed slightly between node v0.9.2 and v0.9.3
     if (expected[i] instanceof RegExp) {
       assert(
@@ -48,13 +49,13 @@ function compareLines(actual, expected) {
 
 function createEmptySourceMap() {
   return new SourceMapGenerator({
-    file: ".generated.js",
+    file: GENERATED_PATH,
     sourceRoot: ".",
   });
 }
 
 function createSourceMapWithGap() {
-  var sourceMap = createEmptySourceMap();
+  const sourceMap = createEmptySourceMap();
   sourceMap.addMapping({
     generated: { line: 100, column: 0 },
     original: { line: 100, column: 0 },
@@ -64,8 +65,8 @@ function createSourceMapWithGap() {
 }
 
 function createMultiLineSourceMap() {
-  var sourceMap = createEmptySourceMap();
-  for (var i = 1; i <= 100; i++) {
+  const sourceMap = createEmptySourceMap();
+  for (let i = 1; i <= 100; i++) {
     sourceMap.addMapping({
       generated: { line: i, column: 0 },
       original: { line: 1000 + i, column: 100 + i },
@@ -76,9 +77,9 @@ function createMultiLineSourceMap() {
 }
 
 function createMultiLineSourceMapWithSourcesContent() {
-  var sourceMap = createEmptySourceMap();
-  var original = new Array(1001).join("\n");
-  for (var i = 1; i <= 100; i++) {
+  const sourceMap = createEmptySourceMap();
+  let original = new Array(1001).join("\n");
+  for (let i = 1; i <= 100; i++) {
     sourceMap.addMapping({
       generated: { line: i, column: 0 },
       original: { line: 1000 + i, column: 5 },
@@ -90,39 +91,41 @@ function createMultiLineSourceMapWithSourcesContent() {
   return sourceMap;
 }
 
+const GENERATED_PATH = path.resolve("./.generated.js");
+
 function compareStackTrace(sourceMap, source, expected) {
   // Check once with a separate source map
-  fs.writeFileSync(".generated.js.map", sourceMap);
+  fs.writeFileSync(GENERATED_PATH + ".map", sourceMap);
   fs.writeFileSync(
-    ".generated.js",
+    GENERATED_PATH,
     "exports.test = function() {" +
       source.join("\n") +
       "};//@ sourceMappingURL=.generated.js.map"
   );
   try {
-    delete require.cache[require.resolve("./.generated")];
-    require("./.generated").test();
+    delete require.cache[GENERATED_PATH];
+    require(GENERATED_PATH).test();
   } catch (e) {
     compareLines(e.stack.split("\n"), expected);
   }
-  fs.unlinkSync(".generated.js");
-  fs.unlinkSync(".generated.js.map");
+  fs.unlinkSync(GENERATED_PATH);
+  fs.unlinkSync(GENERATED_PATH + ".map");
 
   // Check again with an inline source map (in a data URL)
   fs.writeFileSync(
-    ".generated.js",
+    GENERATED_PATH,
     "exports.test = function() {" +
       source.join("\n") +
       "};//@ sourceMappingURL=data:application/json;base64," +
       Buffer.from(sourceMap.toString()).toString("base64")
   );
   try {
-    delete require.cache[require.resolve("./.generated")];
-    require("./.generated").test();
+    delete require.cache[GENERATED_PATH];
+    require(GENERATED_PATH).test();
   } catch (e) {
     compareLines(e.stack.split("\n"), expected);
   }
-  fs.unlinkSync(".generated.js");
+  fs.unlinkSync(GENERATED_PATH);
 }
 
 // ===================================================================
@@ -313,27 +316,27 @@ test("finds the last sourceMappingURL", function(t) {
  * source mapping url.
  */
 test("finds source maps with charset specified", function(t) {
-  var sourceMap = createMultiLineSourceMap();
-  var source = ['throw new Error("test");'];
-  var expected = [
+  const sourceMap = createMultiLineSourceMap();
+  const source = ['throw new Error("test");'];
+  const expected = [
     "Error: test",
     /^    at Object\.exports\.test \(.*\/line1\.js:1001:101\)$/,
   ];
 
   fs.writeFileSync(
-    ".generated.js",
+    GENERATED_PATH,
     "exports.test = function() {" +
       source.join("\n") +
       "};//@ sourceMappingURL=data:application/json;charset=utf8;base64," +
       Buffer.from(sourceMap.toString()).toString("base64")
   );
   try {
-    delete require.cache[require.resolve("./.generated")];
-    require("./.generated").test();
+    delete require.cache[GENERATED_PATH];
+    require(GENERATED_PATH).test();
   } catch (e) {
     compareLines(e.stack.split("\n"), expected);
   }
-  fs.unlinkSync(".generated.js");
+  fs.unlinkSync(GENERATED_PATH);
 
   t.end();
 });
@@ -343,15 +346,15 @@ test("finds source maps with charset specified", function(t) {
  * comment to the source mapping url.
  */
 test("allows code/comments after sourceMappingURL", function(t) {
-  var sourceMap = createMultiLineSourceMap();
-  var source = ['throw new Error("test");'];
-  var expected = [
+  const sourceMap = createMultiLineSourceMap();
+  const source = ['throw new Error("test");'];
+  const expected = [
     "Error: test",
     /^    at Object\.exports\.test \(.*\/line1\.js:1001:101\)$/,
   ];
 
   fs.writeFileSync(
-    ".generated.js",
+    GENERATED_PATH,
     "exports.test = function() {" +
       source.join("\n") +
       "};//# sourceMappingURL=data:application/json;base64," +
@@ -359,12 +362,12 @@ test("allows code/comments after sourceMappingURL", function(t) {
       "\n// Some comment below the sourceMappingURL\nvar foo = 0;"
   );
   try {
-    delete require.cache[require.resolve("./.generated")];
-    require("./.generated").test();
+    delete require.cache[GENERATED_PATH];
+    require(GENERATED_PATH).test();
   } catch (e) {
     compareLines(e.stack.split("\n"), expected);
   }
-  fs.unlinkSync(".generated.js");
+  fs.unlinkSync(GENERATED_PATH);
 
   t.end();
 });

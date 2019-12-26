@@ -1,8 +1,8 @@
-var readFileSync = require("fs").readFileSync;
-var resolve = require("path").resolve;
-var dirname = require("path").dirname;
-var SourceMapConsumer = require("source-map").SourceMapConsumer;
-var stackChain = require("stack-chain");
+const readFileSync = require("fs").readFileSync;
+const resolve = require("path").resolve;
+const dirname = require("path").dirname;
+const SourceMapConsumer = require("source-map").SourceMapConsumer;
+const stackChain = require("stack-chain");
 
 // ===================================================================
 
@@ -16,7 +16,7 @@ function bind(fn, thisArg) {
 }
 
 function clearObject(object) {
-  for (var key in object) {
+  for (const key in object) {
     delete object[key];
   }
 }
@@ -26,10 +26,10 @@ function decodeBase64(base64) {
 }
 
 function memoize(fn) {
-  var cache = Object.create(null);
+  const cache = Object.create(null);
 
   function memoized() {
-    var key = String(arguments[0]);
+    const key = String(arguments[0]);
 
     if (key in cache) {
       return cache[key];
@@ -44,8 +44,8 @@ function memoize(fn) {
 }
 
 function matchAll(re, str) {
-  var matches = [];
-  var match;
+  const matches = [];
+  let match;
 
   while ((match = re.exec(str)) !== null) {
     matches.push(match);
@@ -143,12 +143,12 @@ function cloneCallSite(callSite) {
     return callSite;
   }
 
-  var ownProps = Object.getOwnPropertyNames(Object.getPrototypeOf(callSite));
+  const ownProps = Object.getOwnPropertyNames(Object.getPrototypeOf(callSite));
 
-  var copy = Object.create(null);
-  for (var i = 0, n = ownProps.length; i < n; ++i) {
-    var key = ownProps[i];
-    var value = callSite[key];
+  const copy = Object.create(null);
+  for (let i = 0, n = ownProps.length; i < n; ++i) {
+    const key = ownProps[i];
+    const value = callSite[key];
 
     copy[key] = /^(?:is|get)/.test(key) ? bind(value, callSite) : value;
   }
@@ -157,7 +157,7 @@ function cloneCallSite(callSite) {
   return copy;
 }
 
-var getFile = memoize(function(fileName) {
+const getFile = memoize(function(fileName) {
   try {
     return readFileSync(fileName, "utf8");
   } catch (_) {
@@ -166,13 +166,13 @@ var getFile = memoize(function(fileName) {
 });
 
 function makeSourceMapper(data, path) {
-  var map = new SourceMapConsumer(data);
-  var basedir = dirname(path);
+  const map = new SourceMapConsumer(data);
+  const basedir = dirname(path);
 
   return function(line, column) {
-    var position = map.originalPositionFor({ line: line, column: column });
+    const position = map.originalPositionFor({ line: line, column: column });
 
-    var origSource = position.source;
+    const origSource = position.source;
     return (
       origSource != null && {
         column: position.column,
@@ -187,20 +187,20 @@ function makeSourceMapper(data, path) {
 
 // Trick to get the number of prepended characters for the first line
 // in Node.
-var firstLineColumnShift = (function() {
-  var originalPrepareStackTrace = Error.prepareStackTrace;
+const firstLineColumnShift = (function() {
+  const originalPrepareStackTrace = Error.prepareStackTrace;
   Error.prepareStackTrace = function(_, callSites) {
     return callSites[0].getColumnNumber();
   };
 
-  var n = require("./error-stack");
+  const n = require("./error-stack");
 
   Error.prepareStackTrace = originalPrepareStackTrace;
 
   return n;
 })();
 
-var RE_SOURCE_MAP_URL = new RegExp(
+const RE_SOURCE_MAP_URL = new RegExp(
   [
     // Single line comment.
     "//[@#]\\s+sourceMappingURL=(\\S+)\\s*$",
@@ -211,10 +211,10 @@ var RE_SOURCE_MAP_URL = new RegExp(
   "mg"
 );
 
-var RE_INLINE_SOURCE_MAP = /^data:application\/json[^,]+base64,/g;
+const RE_INLINE_SOURCE_MAP = /^data:application\/json[^,]+base64,/g;
 
-var getSourceMapper = memoize(function(fileName) {
-  var data, path;
+const getSourceMapper = memoize(function(fileName) {
+  let data, path;
 
   // Try to get lucky by trying directly `<fileName>.map`.
   path = fileName + ".map";
@@ -224,13 +224,13 @@ var getSourceMapper = memoize(function(fileName) {
   }
 
   // Load the file.
-  var file = getFile(fileName);
+  const file = getFile(fileName);
   if (!file) {
     return;
   }
 
   // Look for a source map URL.
-  var matches = matchAll(RE_SOURCE_MAP_URL, file).pop();
+  const matches = matchAll(RE_SOURCE_MAP_URL, file).pop();
   if (!matches) {
     return;
   }
@@ -254,17 +254,17 @@ var getSourceMapper = memoize(function(fileName) {
 });
 
 function mapPosition(fileName, line, column) {
-  var mapper = getSourceMapper(fileName);
+  const mapper = getSourceMapper(fileName);
   if (mapper) {
     return mapper(line, column);
   }
 }
 
-var RE_EVAL_ORIGIN = /^eval at ([^(]+) \((.+):(\d+):(\d+)\)$/;
-var RE_EVAL_ORIGIN_NESTED = /^eval at ([^(]+) \((.+)\)$/;
+const RE_EVAL_ORIGIN = /^eval at ([^(]+) \((.+):(\d+):(\d+)\)$/;
+const RE_EVAL_ORIGIN_NESTED = /^eval at ([^(]+) \((.+)\)$/;
 
 function mapEvalOrigin(origin) {
-  var matches, position;
+  let matches, position;
 
   matches = RE_EVAL_ORIGIN.exec(origin);
   if (matches) {
@@ -295,9 +295,9 @@ function mapEvalOrigin(origin) {
 }
 
 function wrapCallSite(callSite) {
-  var fileName = callSite.getFileName();
+  const fileName = callSite.getFileName();
 
-  var origin;
+  let origin;
   if (
     callSite.isEval() &&
     (origin = callSite.getEvalOrigin()) &&
@@ -312,8 +312,8 @@ function wrapCallSite(callSite) {
     return callSite;
   }
 
-  var line = callSite.getLineNumber();
-  var column = callSite.getColumnNumber();
+  const line = callSite.getLineNumber();
+  let column = callSite.getColumnNumber();
 
   if (line === 1) {
     column -= firstLineColumnShift;
@@ -323,7 +323,7 @@ function wrapCallSite(callSite) {
     callSite.getColumnNumber = wrap(column);
   }
 
-  var position = mapPosition(fileName, line, column);
+  const position = mapPosition(fileName, line, column);
   if (!position) {
     return callSite;
   }
@@ -341,10 +341,10 @@ function wrapCallSite(callSite) {
 
 exports = module.exports = function register() {
   stackChain.extend.attach(function sourceMapModifier(_, callSites) {
-    var n = callSites.length;
-    var wrapped = new Array(n);
+    const n = callSites.length;
+    const wrapped = new Array(n);
 
-    for (var i = 0; i < n; ++i) {
+    for (let i = 0; i < n; ++i) {
       wrapped[i] = wrapCallSite(callSites[i]);
     }
 
