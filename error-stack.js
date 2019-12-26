@@ -1,1 +1,1 @@
-module.exports = new Error().stack - 18
+module.exports = new Error().stack - 18;

@@ -6,8 +6,8 @@ Differences with [source-map-support](https://www.npmjs.com/package/source-map-s
 
 - support only Node (no browsers)
 - simpler:
-    - do not handle uncaught exceptions
-    - cannot specify a custom resolution
+  - do not handle uncaught exceptions
+  - cannot specify a custom resolution
 - based on [stack-chain](https://www.npmjs.com/package/stack-chain)
 
 > Note: the name of this package is temporary, maybe it will be
@@ -25,24 +25,26 @@ Installation of the [npm package](https://npmjs.org/package/julien-f-source-map-
 ## Usage
 
 ```js
-import 'julien-f-source-map-support/register'
+import "julien-f-source-map-support/register";
 ```
 
 The perfect setup:
 
 ```js
-Error.stackTraceLimit = 100
+Error.stackTraceLimit = 100;
 
 // Async traces.
 //
 // Does not work with Node < 4.
-try { require('trace') } catch (_) {}
+try {
+  require("trace");
+} catch (_) {}
 
 // Hide core modules from traces.
-require('clarify')
+require("clarify");
 
 // Support source maps.
-require('julien-f-source-map-support')
+require("julien-f-source-map-support");
 ```
 
 ## Development
@@ -57,7 +59,7 @@ require('julien-f-source-map-support')
 
 ## Contributions
 
-Contributions are *very* welcomed, either on the documentation or on
+Contributions are _very_ welcomed, either on the documentation or on
 the code.
 
 You may:

@@ -1,63 +1,63 @@
-var readFileSync = require('fs').readFileSync
-var resolve = require('path').resolve
-var dirname = require('path').dirname
-var SourceMapConsumer = require('source-map').SourceMapConsumer
-var stackChain = require('stack-chain')
+var readFileSync = require("fs").readFileSync;
+var resolve = require("path").resolve;
+var dirname = require("path").dirname;
+var SourceMapConsumer = require("source-map").SourceMapConsumer;
+var stackChain = require("stack-chain");
 
 // ===================================================================
 
-function bind (fn, thisArg) {
-  function bound () {
-    return fn.apply(thisArg, arguments)
+function bind(fn, thisArg) {
+  function bound() {
+    return fn.apply(thisArg, arguments);
   }
-  bound.raw = fn
+  bound.raw = fn;
 
-  return bound
+  return bound;
 }
 
-function clearObject (object) {
+function clearObject(object) {
   for (var key in object) {
-    delete object[key]
+    delete object[key];
   }
 }
 
-function decodeBase64 (base64) {
-  return Buffer.from(base64, 'base64').toString()
+function decodeBase64(base64) {
+  return Buffer.from(base64, "base64").toString();
 }
 
-function memoize (fn) {
-  var cache = Object.create(null)
+function memoize(fn) {
+  var cache = Object.create(null);
 
-  function memoized () {
-    var key = String(arguments[0])
+  function memoized() {
+    var key = String(arguments[0]);
 
     if (key in cache) {
-      return cache[key]
+      return cache[key];
     }
 
-    return (cache[key] = fn.apply(this, arguments))
+    return (cache[key] = fn.apply(this, arguments));
   }
-  memoized.cache = cache
-  memoized.raw = fn
+  memoized.cache = cache;
+  memoized.raw = fn;
 
-  return memoized
+  return memoized;
 }
 
-function matchAll (re, str) {
-  var matches = []
-  var match
+function matchAll(re, str) {
+  var matches = [];
+  var match;
 
   while ((match = re.exec(str)) !== null) {
-    matches.push(match)
+    matches.push(match);
   }
 
-  return matches
+  return matches;
 }
 
-function wrap (value) {
-  return function () {
-    return value
-  }
+function wrap(value) {
+  return function() {
+    return value;
+  };
 }
 
 // -------------------------------------------------------------------
@@ -71,271 +71,288 @@ function wrap (value) {
 // code of CallSite.prototype.toString but unfortunately a new release of V8
 // did something to the prototype chain and broke the shim. The only fix I
 // could find was copy/paste.
-function CallSiteToString () {
-  var fileName
-  var fileLocation = ''
+function CallSiteToString() {
+  var fileName;
+  var fileLocation = "";
   if (this.isNative()) {
-    fileLocation = 'native'
+    fileLocation = "native";
   } else {
-    fileName = this.getScriptNameOrSourceURL()
+    fileName = this.getScriptNameOrSourceURL();
     if (!fileName && this.isEval()) {
-      fileLocation = this.getEvalOrigin()
-      fileLocation += ', '; // Expecting source position to follow.
+      fileLocation = this.getEvalOrigin();
+      fileLocation += ", "; // Expecting source position to follow.
     }
     if (fileName) {
-      fileLocation += fileName
+      fileLocation += fileName;
     } else {
       // Source code does not originate from a file and is not native, but we
       // can still get the source position inside the source string, e.g. in
       // an eval string.
-      fileLocation += '<anonymous>'
+      fileLocation += "<anonymous>";
     }
-    var lineNumber = this.getLineNumber()
+    var lineNumber = this.getLineNumber();
     if (lineNumber != null) {
-      fileLocation += ':' + lineNumber
-      var columnNumber = this.getColumnNumber()
+      fileLocation += ":" + lineNumber;
+      var columnNumber = this.getColumnNumber();
       if (columnNumber) {
-        fileLocation += ':' + columnNumber
+        fileLocation += ":" + columnNumber;
       }
     }
   }
-  var line = ''
-  var functionName = this.getFunctionName()
-  var addSuffix = true
-  var isConstructor = this.isConstructor()
-  var isMethodCall = !(this.isToplevel() || isConstructor)
+  var line = "";
+  var functionName = this.getFunctionName();
+  var addSuffix = true;
+  var isConstructor = this.isConstructor();
+  var isMethodCall = !(this.isToplevel() || isConstructor);
   if (isMethodCall) {
-    var typeName = this.getTypeName()
-    var methodName = this.getMethodName()
+    var typeName = this.getTypeName();
+    var methodName = this.getMethodName();
     if (functionName) {
       if (typeName && functionName.indexOf(typeName) != 0) {
-        line += typeName + '.'
+        line += typeName + ".";
       }
-      line += functionName
-      if (methodName && functionName.indexOf('.' + methodName) != functionName.length - methodName.length - 1) {
-        line += ' [as ' + methodName + ']'
+      line += functionName;
+      if (
+        methodName &&
+        functionName.indexOf("." + methodName) !=
+          functionName.length - methodName.length - 1
+      ) {
+        line += " [as " + methodName + "]";
       }
     } else {
-      line += typeName + '.' + (methodName || '<anonymous>')
+      line += typeName + "." + (methodName || "<anonymous>");
     }
   } else if (isConstructor) {
-    line += 'new ' + (functionName || '<anonymous>')
+    line += "new " + (functionName || "<anonymous>");
   } else if (functionName) {
-    line += functionName
+    line += functionName;
   } else {
-    line += fileLocation
-    addSuffix = false
+    line += fileLocation;
+    addSuffix = false;
   }
   if (addSuffix) {
-    line += ' (' + fileLocation + ')'
+    line += " (" + fileLocation + ")";
   }
-  return line
+  return line;
 }
 /* eslint-enable */
 
-function cloneCallSite (callSite) {
+function cloneCallSite(callSite) {
   if (callSite.toString === CallSiteToString) {
     // Already cloned, nothing to do.
-    return callSite
+    return callSite;
   }
 
-  var ownProps = Object.getOwnPropertyNames(Object.getPrototypeOf(callSite))
+  var ownProps = Object.getOwnPropertyNames(Object.getPrototypeOf(callSite));
 
-  var copy = Object.create(null)
+  var copy = Object.create(null);
   for (var i = 0, n = ownProps.length; i < n; ++i) {
-    var key = ownProps[i]
-    var value = callSite[key]
+    var key = ownProps[i];
+    var value = callSite[key];
 
-    copy[key] = /^(?:is|get)/.test(key)
-      ? bind(value, callSite)
-      : value
+    copy[key] = /^(?:is|get)/.test(key) ? bind(value, callSite) : value;
   }
 
-  copy.toString = CallSiteToString
-  return copy
+  copy.toString = CallSiteToString;
+  return copy;
 }
 
-var getFile = memoize(function (fileName) {
+var getFile = memoize(function(fileName) {
   try {
-    return readFileSync(fileName, 'utf8')
+    return readFileSync(fileName, "utf8");
   } catch (_) {
-    return null
+    return null;
   }
-})
+});
 
-function makeSourceMapper (data, path) {
-  var map = new SourceMapConsumer(data)
-  var basedir = dirname(path)
+function makeSourceMapper(data, path) {
+  var map = new SourceMapConsumer(data);
+  var basedir = dirname(path);
 
-  return function (line, column) {
-    var position = map.originalPositionFor({ line: line, column: column })
+  return function(line, column) {
+    var position = map.originalPositionFor({ line: line, column: column });
 
-    var origSource = position.source
-    return (origSource != null) && {
-      column: position.column,
-      line: position.line,
-      fileName: resolve(basedir, origSource) // source-map calls it source.
-    }
-  }
+    var origSource = position.source;
+    return (
+      origSource != null && {
+        column: position.column,
+        line: position.line,
+        fileName: resolve(basedir, origSource), // source-map calls it source.
+      }
+    );
+  };
 }
 
 // ===================================================================
 
 // Trick to get the number of prepended characters for the first line
 // in Node.
-var firstLineColumnShift = (function () {
-  var originalPrepareStackTrace = Error.prepareStackTrace
-  Error.prepareStackTrace = function (_, callSites) {
-    return callSites[0].getColumnNumber()
-  }
+var firstLineColumnShift = (function() {
+  var originalPrepareStackTrace = Error.prepareStackTrace;
+  Error.prepareStackTrace = function(_, callSites) {
+    return callSites[0].getColumnNumber();
+  };
 
-  var n = require('./error-stack')
+  var n = require("./error-stack");
 
-  Error.prepareStackTrace = originalPrepareStackTrace
+  Error.prepareStackTrace = originalPrepareStackTrace;
 
-  return n
-})()
+  return n;
+})();
 
-var RE_SOURCE_MAP_URL = new RegExp([
-  // Single line comment.
-  '//[@#]\\s+sourceMappingURL=(\\S+)\\s*$',
+var RE_SOURCE_MAP_URL = new RegExp(
+  [
+    // Single line comment.
+    "//[@#]\\s+sourceMappingURL=(\\S+)\\s*$",
 
-  // Multi line comment.
-  '/\\*[@#]\\s+sourceMappingURL=(\\S+?)\\s*\\*/'
-].join('|'), 'mg')
+    // Multi line comment.
+    "/\\*[@#]\\s+sourceMappingURL=(\\S+?)\\s*\\*/",
+  ].join("|"),
+  "mg"
+);
 
-var RE_INLINE_SOURCE_MAP = /^data:application\/json[^,]+base64,/g
+var RE_INLINE_SOURCE_MAP = /^data:application\/json[^,]+base64,/g;
 
-var getSourceMapper = memoize(function (fileName) {
-  var data, path
+var getSourceMapper = memoize(function(fileName) {
+  var data, path;
 
   // Try to get lucky by trying directly `<fileName>.map`.
-  path = fileName + '.map'
-  data = getFile(path)
+  path = fileName + ".map";
+  data = getFile(path);
   if (data) {
-    return makeSourceMapper(data, path)
+    return makeSourceMapper(data, path);
   }
 
   // Load the file.
-  var file = getFile(fileName)
+  var file = getFile(fileName);
   if (!file) {
-    return
+    return;
   }
 
   // Look for a source map URL.
-  var matches = matchAll(RE_SOURCE_MAP_URL, file).pop()
+  var matches = matchAll(RE_SOURCE_MAP_URL, file).pop();
   if (!matches) {
-    return
+    return;
   }
 
-  path = matches[1]
+  path = matches[1];
 
   // If it is an inline source map, process it.
   if (RE_INLINE_SOURCE_MAP.test(path)) {
-    data = decodeBase64(path.slice(RE_INLINE_SOURCE_MAP.lastIndex))
-    path = fileName
+    data = decodeBase64(path.slice(RE_INLINE_SOURCE_MAP.lastIndex));
+    path = fileName;
 
-    return makeSourceMapper(data, path)
+    return makeSourceMapper(data, path);
   }
 
-  data = getFile(path)
+  data = getFile(path);
   if (!data) {
-    return
+    return;
   }
 
-  return makeSourceMapper(data, path)
-})
+  return makeSourceMapper(data, path);
+});
 
-function mapPosition (fileName, line, column) {
-  var mapper = getSourceMapper(fileName)
+function mapPosition(fileName, line, column) {
+  var mapper = getSourceMapper(fileName);
   if (mapper) {
-    return mapper(line, column)
+    return mapper(line, column);
   }
 }
 
-var RE_EVAL_ORIGIN = /^eval at ([^(]+) \((.+):(\d+):(\d+)\)$/
-var RE_EVAL_ORIGIN_NESTED = /^eval at ([^(]+) \((.+)\)$/
+var RE_EVAL_ORIGIN = /^eval at ([^(]+) \((.+):(\d+):(\d+)\)$/;
+var RE_EVAL_ORIGIN_NESTED = /^eval at ([^(]+) \((.+)\)$/;
 
-function mapEvalOrigin (origin) {
-  var matches, position
+function mapEvalOrigin(origin) {
+  var matches, position;
 
-  matches = RE_EVAL_ORIGIN.exec(origin)
+  matches = RE_EVAL_ORIGIN.exec(origin);
   if (matches) {
-    position = mapPosition(matches[2], +matches[3], +matches[4])
+    position = mapPosition(matches[2], +matches[3], +matches[4]);
 
-    return position && [
-      'eval at ', matches[1], ' (', position.fileName, ':',
-      position.line, ':', position.column, ')'
-    ].join('')
+    return (
+      position &&
+      [
+        "eval at ",
+        matches[1],
+        " (",
+        position.fileName,
+        ":",
+        position.line,
+        ":",
+        position.column,
+        ")",
+      ].join("")
+    );
   }
 
-  matches = RE_EVAL_ORIGIN_NESTED.exec(origin)
+  matches = RE_EVAL_ORIGIN_NESTED.exec(origin);
   if (matches) {
-    return [
-      'eval at ', matches[1], ' (', mapEvalOrigin(matches[2]), ')'
-    ].join('')
+    return ["eval at ", matches[1], " (", mapEvalOrigin(matches[2]), ")"].join(
+      ""
+    );
   }
 }
 
-function wrapCallSite (callSite) {
-  var fileName = callSite.getFileName()
+function wrapCallSite(callSite) {
+  var fileName = callSite.getFileName();
 
-  var origin
+  var origin;
   if (
     callSite.isEval() &&
     (origin = callSite.getEvalOrigin()) &&
     (origin = mapEvalOrigin(origin))
   ) {
-    callSite = cloneCallSite(callSite)
-    callSite.getEvalOrigin = wrap(origin)
+    callSite = cloneCallSite(callSite);
+    callSite.getEvalOrigin = wrap(origin);
   }
 
   // Some lines do not have a source file (native code for instance).
   if (!fileName) {
-    return callSite
+    return callSite;
   }
 
-  var line = callSite.getLineNumber()
-  var column = callSite.getColumnNumber()
+  var line = callSite.getLineNumber();
+  var column = callSite.getColumnNumber();
 
   if (line === 1) {
-    column -= firstLineColumnShift
+    column -= firstLineColumnShift;
 
     // Fix the column even if there is no source map.
-    callSite = cloneCallSite(callSite)
-    callSite.getColumnNumber = wrap(column)
+    callSite = cloneCallSite(callSite);
+    callSite.getColumnNumber = wrap(column);
   }
 
-  var position = mapPosition(fileName, line, column)
+  var position = mapPosition(fileName, line, column);
   if (!position) {
-    return callSite
+    return callSite;
   }
 
-  callSite = cloneCallSite(callSite)
-  callSite.getColumnNumber = wrap(position.column)
-  callSite.getFileName = wrap(position.fileName)
-  callSite.getLineNumber = wrap(position.line)
-  callSite.getScriptNameOrSourceURL = wrap(position.fileName)
+  callSite = cloneCallSite(callSite);
+  callSite.getColumnNumber = wrap(position.column);
+  callSite.getFileName = wrap(position.fileName);
+  callSite.getLineNumber = wrap(position.line);
+  callSite.getScriptNameOrSourceURL = wrap(position.fileName);
 
-  return callSite
+  return callSite;
 }
 
 // -------------------------------------------------------------------
 
-exports = module.exports = function register () {
-  stackChain.extend.attach(function sourceMapModifier (_, callSites) {
-    var n = callSites.length
-    var wrapped = new Array(n)
+exports = module.exports = function register() {
+  stackChain.extend.attach(function sourceMapModifier(_, callSites) {
+    var n = callSites.length;
+    var wrapped = new Array(n);
 
     for (var i = 0; i < n; ++i) {
-      wrapped[i] = wrapCallSite(callSites[i])
+      wrapped[i] = wrapCallSite(callSites[i]);
     }
 
-    return wrapped
-  })
-}
+    return wrapped;
+  });
+};
 
-exports.clearCache = function clearCache () {
-  clearObject(getFile.cache)
-  clearObject(getSourceMapper.cache)
-}
+exports.clearCache = function clearCache() {
+  clearObject(getFile.cache);
+  clearObject(getSourceMapper.cache);
+};
