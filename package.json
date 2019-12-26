@@ -29,7 +29,6 @@
     "stack-chain": "^2.0.0"
   },
   "devDependencies": {
-    "standard": "^10.0.3",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.8.0",
     "eslint-config-standard": "^14.1.0",
@@ -37,10 +36,25 @@
     "eslint-plugin-node": "^11.0.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
+    "husky": "^3.1.0",
+    "lint-staged": "^9.5.0",
+    "prettier": "^1.19.1",
     "tape": "^4.2.1"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.js": [
+      "prettier --write",
+      "git add",
+      "eslint --ignore-pattern '!*'",
+      "npm run test"
+    ]
+  },
   "scripts": {
-    "pretest": "standard --fix",
     "test": "tape \"*.spec.js\""
   }
 }
