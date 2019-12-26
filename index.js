@@ -188,6 +188,15 @@ function makeSourceMapper(data, path) {
 // Trick to get the number of prepended characters for the first line
 // in Node.
 const firstLineColumnShift = (function() {
+  // See https://github.com/evanw/node-source-map-support/blob/61ebf232484dbe069721bbfe36c8405ab5ac3954/source-map-support.js#L358-L361
+  if (
+    /^v(10\.1[6-9]|10\.[2-9][0-9]|10\.[0-9]{3,}|1[2-9]\d*|[2-9]\d|\d{3,}|11\.11)/.test(
+      process.version
+    )
+  ) {
+    return 0;
+  }
+
   const originalPrepareStackTrace = Error.prepareStackTrace;
   Error.prepareStackTrace = function(_, callSites) {
     return callSites[0].getColumnNumber();
@@ -345,7 +354,13 @@ exports = module.exports = function register() {
     const wrapped = new Array(n);
 
     for (let i = 0; i < n; ++i) {
-      wrapped[i] = wrapCallSite(callSites[i]);
+      let callSite = callSites[i];
+      try {
+        callSite = wrapCallSite(callSite);
+      } catch (_) {
+        // we must never throw when decorating an stack trace
+      }
+      wrapped[i] = callSite;
     }
 
     return wrapped;
